@@ -55,6 +55,7 @@ export class OpenAPIClientAxios {
   public initalized: boolean;
   public instance: any;
 
+  public axiosInstance: AxiosInstance;
   public axiosConfigDefaults: AxiosRequestConfig;
   public swaggerParserOpts: RefParser.Options;
 
@@ -69,12 +70,14 @@ export class OpenAPIClientAxios {
    * @param opts - constructor options
    * @param {Document | string} opts.definition - the OpenAPI definition, file path or Document object
    * @param {boolean} opts.quick - quick mode, skips validation and doesn't guarantee document is unchanged
-   * @param {boolean} opts.axiosConfigDefaults - default axios config for the instance
+   * @param {AxiosInstance} opts.axiosInstance - reuse other axios instance
+   * @param {AxiosRequestConfig} opts.axiosConfigDefaults - default axios config for the instance
    * @memberof OpenAPIClientAxios
    */
   constructor(opts: {
     definition: Document | string;
     quick?: boolean;
+    axiosInstance?: AxiosInstance;
     axiosConfigDefaults?: AxiosRequestConfig;
     swaggerParserOpts?: RefParser.Options;
     withServer?: number | string | Server;
@@ -85,6 +88,7 @@ export class OpenAPIClientAxios {
       quick: false,
       withServer: 0,
       baseURLVariables: {},
+      axiosInstance: null,
       swaggerParserOpts: {} as RefParser.Options,
       transformOperationName: (operationId: string) => operationId,
       ...opts,
@@ -93,8 +97,10 @@ export class OpenAPIClientAxios {
         ...(opts.axiosConfigDefaults || {}),
       } as AxiosRequestConfig,
     };
+
     this.inputDocument = optsWithDefaults.definition;
     this.quick = optsWithDefaults.quick;
+    this.axiosInstance = optsWithDefaults.axiosInstance;
     this.axiosConfigDefaults = optsWithDefaults.axiosConfigDefaults;
     this.swaggerParserOpts = optsWithDefaults.swaggerParserOpts;
     this.defaultServer = optsWithDefaults.withServer;
@@ -208,7 +214,9 @@ export class OpenAPIClientAxios {
    */
   public createAxiosInstance = <Client = OpenAPIClient>(): Client => {
     // create axios instance
-    const instance = axios.create(this.axiosConfigDefaults) as OpenAPIClient;
+    const instance = this.axiosInstance !== null
+      ? this.axiosInstance as OpenAPIClient
+      : axios.create(this.axiosConfigDefaults) as OpenAPIClient;
 
     // set baseURL to the one found in the definition servers (if not set in axios defaults)
     const baseURL = this.getBaseURL();
