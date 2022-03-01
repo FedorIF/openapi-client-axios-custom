@@ -214,9 +214,7 @@ export class OpenAPIClientAxios {
    */
   public createAxiosInstance = <Client = OpenAPIClient>(): Client => {
     // create axios instance
-    const instance = this.axiosInstance !== null
-      ? this.axiosInstance as OpenAPIClient
-      : axios.create(this.axiosConfigDefaults) as OpenAPIClient;
+    const instance = axios.create(this.axiosConfigDefaults) as OpenAPIClient;
 
     // set baseURL to the one found in the definition servers (if not set in axios defaults)
     const baseURL = this.getBaseURL();
@@ -372,7 +370,7 @@ export class OpenAPIClientAxios {
     // construct axios request config
     const axiosConfig: AxiosRequestConfig = {
       method: request.method as Method,
-      url: request.path,
+      url: request.url,
       data: request.payload,
       params: request.query,
       headers: request.headers,
@@ -544,8 +542,10 @@ export class OpenAPIClientAxios {
   private createOperationMethod = (operation: Operation): UnknownOperationMethod => {
     return async (...args: OperationMethodArguments) => {
       const axiosConfig = this.getAxiosConfigForOperation(operation, args);
+      const client = this.axiosInstance !== null ? this.axiosInstance : this.client;
+
       // do the axios request
-      return this.client.request(axiosConfig);
+      return client.request(axiosConfig);
     };
   };
 }
